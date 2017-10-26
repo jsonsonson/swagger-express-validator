@@ -97,6 +97,33 @@ const sendData = (res, data, encoding) => {
   res.end(data, encoding);
 };
 
+const additionalPropertiesRequest = (req) => {
+  let additionalPropertiesArr;
+  const reqBody = _.cloneDeep(req.body);
+  let pathObj = pathObjects.filter(obj => req.originalUrl.match(obj.regexp));
+  if (pathObj && pathObj.length > 0) {
+    pathObj = pathObj[0];
+    const def = pathObj.definition[req.method.toLowerCase()];
+    const defParams = def.parameters.filter(parameter => parameter.schema);
+    defParams.forEach((parameter) => {
+      const schema = parameter.schema;
+      const properties = schema.properties || {};
+      const additionalProperties = schema.additionalProperties || {};
+      const allProperties = Object.assign(properties, additionalProperties);
+      Object.keys(reqBody).forEach((reqProperty) => {
+        if (allProperties[reqProperty] === undefined) {
+          if (!additionalPropertiesArr) {
+            additionalPropertiesArr = [];
+          }
+
+          additionalPropertiesArr.push(reqProperty);
+        }
+      });
+    });
+  }
+  return additionalPropertiesArr;
+};
+
 const validateResponse = (req, res, next) => {
   const ajv = new Ajv({
     allErrors: true,
@@ -247,12 +274,20 @@ const validateRequest = (req, res, next) => {
       next();
     }
   } else {
+    const additionalInvalidProperties = additionalPropertiesRequest(req);
     const validator = ajv.compile(requestSchema);
-    const validation = validator(_.cloneDeep(req.body));
+    const validation = validator(_.cloneDeep(req.body)) &&
+     !additionalInvalidProperties;
     if (!validation) {
       debug(`  Request validation errors: \n${util.inspect(validator.errors)}`);
       if (options.requestValidationFn) {
-        options.requestValidationFn(req, req.body, validator.errors);
+        const errors = validator.errors || [];
+        if (additionalInvalidProperties) {
+          errors.push({
+            'Invalid Additional Parameters': additionalInvalidProperties,
+          });
+        }
+        options.requestValidationFn(req, req.body, errors);
         next();
       } else {
         const err = {
