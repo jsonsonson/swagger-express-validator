@@ -9,6 +9,32 @@ const valueValidator = require('validator');
 let pathObjects = [];
 let options = {};
 
+const formats = {
+  int32: valueValidator.isInt,
+  int64: valueValidator.isInt,
+  url: valueValidator.isURL,
+  byte: valueValidator.isBase64,
+  float: valueValidator.isFloat,
+  double: valueValidator.isFloat,
+  email: valueValidator.isEmail,
+  date: valueValidator.isDate,
+  'date-time': valueValidator.isDate,
+  uuid: valueValidator.isUUID,
+  ipv4: valueValidator.isIP,
+  ipv6: valueValidator.isIP,
+  numeric: valueValidator.isNumeric,
+  alphanumeric: valueValidator.isAlphanumeric,
+  lowercase: valueValidator.isLowercase,
+  uppercase: valueValidator.isUppercase,
+  macAddress: valueValidator.isMACAddress,
+  hex: valueValidator.isHexadecimal,
+  hexadecimal: valueValidator.isHexadecimal,
+  md5: valueValidator.isMD5,
+  json: valueValidator.isJSON,
+  currency: valueValidator.isCurrency,
+  base64: valueValidator.isBase64,
+};
+
 const buildPathObjects = paths => _.map(paths, (pathDef, path) => ({
   definition: _.get(options.schema, ['paths', path]),
   original: ['paths', path],
@@ -99,27 +125,29 @@ const sendData = (res, data, encoding) => {
 
 const additionalPropertiesRequest = (req) => {
   let additionalPropertiesArr;
-  const reqBody = _.cloneDeep(req.body);
-  let pathObj = pathObjects.filter(obj => req.originalUrl.match(obj.regexp));
-  if (pathObj && pathObj.length > 0) {
-    pathObj = pathObj[0];
-    const def = pathObj.definition[req.method.toLowerCase()];
-    const defParams = def.parameters.filter(parameter => parameter.schema);
-    defParams.forEach((parameter) => {
-      const schema = parameter.schema;
-      const properties = schema.properties || {};
-      const additionalProperties = schema.additionalProperties || {};
-      const allProperties = Object.assign(properties, additionalProperties);
-      Object.keys(reqBody).forEach((reqProperty) => {
-        if (allProperties[reqProperty] === undefined) {
-          if (!additionalPropertiesArr) {
-            additionalPropertiesArr = [];
-          }
+  if (options.nonExistentProperties) {
+    const reqBody = _.cloneDeep(req.body);
+    let pathObj = pathObjects.filter(obj => req.originalUrl.match(obj.regexp));
+    if (pathObj && pathObj.length > 0) {
+      pathObj = pathObj[0];
+      const def = pathObj.definition[req.method.toLowerCase()];
+      const defParams = def.parameters.filter(parameter => parameter.schema);
+      defParams.forEach((parameter) => {
+        const schema = parameter.schema;
+        const properties = schema.properties || {};
+        const additionalProperties = schema.additionalProperties || {};
+        const allProperties = Object.assign(properties, additionalProperties);
+        Object.keys(reqBody).forEach((reqProperty) => {
+          if (allProperties[reqProperty] === undefined) {
+            if (!additionalPropertiesArr) {
+              additionalPropertiesArr = [];
+            }
 
-          additionalPropertiesArr.push(reqProperty);
-        }
+            additionalPropertiesArr.push(reqProperty);
+          }
+        });
       });
-    });
+    }
   }
   return additionalPropertiesArr;
 };
@@ -128,31 +156,7 @@ const validateResponse = (req, res, next) => {
   const ajv = new Ajv({
     allErrors: true,
     unknownFormats: true,
-    formats: {
-      int32: valueValidator.isInt,
-      int64: valueValidator.isInt,
-      url: valueValidator.isURL,
-      byte: valueValidator.isBase64,
-      float: valueValidator.isFloat,
-      double: valueValidator.isFloat,
-      email: valueValidator.isEmail,
-      date: valueValidator.isDate,
-      'date-time': valueValidator.isDate,
-      uuid: valueValidator.isUUID,
-      ipv4: valueValidator.isIP,
-      ipv6: valueValidator.isIP,
-      numeric: valueValidator.isNumeric,
-      alphanumeric: valueValidator.isAlphanumeric,
-      lowercase: valueValidator.isLowercase,
-      uppercase: valueValidator.isUppercase,
-      macAddress: valueValidator.isMACAddress,
-      hex: valueValidator.isHexadecimal,
-      hexadecimal: valueValidator.isHexadecimal,
-      md5: valueValidator.isMD5,
-      json: valueValidator.isJSON,
-      currency: valueValidator.isCurrency,
-      base64: valueValidator.isBase64,
-    },
+    formats,
   });
 
   let val;
@@ -161,14 +165,14 @@ const validateResponse = (req, res, next) => {
   const origWrite = res.write;
 
   // eslint-disable-next-line
-  res.write = function (data) {
+  res.write = function(data) {
     if (typeof data !== 'undefined') {
       writtenData.push(data);
     }
   };
 
   // eslint-disable-next-line
-  res.end = function (data, encoding) {
+  res.end = function(data, encoding) {
     if (data) {
       if (data instanceof Buffer) {
         writtenData.push(data);
@@ -237,31 +241,7 @@ const validateRequest = (req, res, next) => {
   const ajv = new Ajv({
     allErrors: true,
     unknownFormats: true,
-    formats: {
-      int32: valueValidator.isInt,
-      int64: valueValidator.isInt,
-      url: valueValidator.isURL,
-      byte: valueValidator.isBase64,
-      float: valueValidator.isFloat,
-      double: valueValidator.isFloat,
-      email: valueValidator.isEmail,
-      date: valueValidator.isDate,
-      'date-time': valueValidator.isDate,
-      uuid: valueValidator.isUUID,
-      ipv4: valueValidator.isIP,
-      ipv6: valueValidator.isIP,
-      numeric: valueValidator.isNumeric,
-      alphanumeric: valueValidator.isAlphanumeric,
-      lowercase: valueValidator.isLowercase,
-      uppercase: valueValidator.isUppercase,
-      macAddress: valueValidator.isMACAddress,
-      hex: valueValidator.isHexadecimal,
-      hexadecimal: valueValidator.isHexadecimal,
-      md5: valueValidator.isMD5,
-      json: valueValidator.isJSON,
-      currency: valueValidator.isCurrency,
-      base64: valueValidator.isBase64,
-    },
+    formats,
   });
 
   const requestSchema = resolveRequestModelSchema(req);
@@ -277,7 +257,7 @@ const validateRequest = (req, res, next) => {
     const additionalInvalidProperties = additionalPropertiesRequest(req);
     const validator = ajv.compile(requestSchema);
     const validation = validator(_.cloneDeep(req.body)) &&
-     !additionalInvalidProperties;
+      !additionalInvalidProperties;
     if (!validation) {
       debug(`  Request validation errors: \n${util.inspect(validator.errors)}`);
       if (options.requestValidationFn) {
@@ -330,6 +310,7 @@ const validate = (req, res, next) => {
  * @param opts.allowNullable {boolean|true}
  * @param opts.requestValidationFn {function}
  * @param opts.responseValidationFn {function}
+ * @param opts.nonExistentProperties {boolean|true}
  * @returns {function(*=, *=, *=)}
  */
 const init = (opts = {}) => {
@@ -338,6 +319,7 @@ const init = (opts = {}) => {
     validateRequest: true,
     validateResponse: true,
     allowNullable: true,
+    nonExistentProperties: true,
   });
 
   if (options.schema) {
