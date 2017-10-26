@@ -96,7 +96,7 @@ const sendData = (res, data, encoding) => {
 const validateResponse = (req, res, next) => {
   const ajv = new Ajv({
     allErrors: true,
-    unknownFormats:   true,
+    unknownFormats: true,
     formats: {
       int32: valueValidator.isInt,
       int64: valueValidator.isInt,
@@ -115,7 +115,6 @@ const validateResponse = (req, res, next) => {
       lowercase: valueValidator.isLowercase,
       uppercase: valueValidator.isUppercase,
       macAddress: valueValidator.isMACAddress,
-      url: valueValidator.isURL,
       hex: valueValidator.isHexadecimal,
       hexadecimal: valueValidator.isHexadecimal,
       md5: valueValidator.isMD5,
