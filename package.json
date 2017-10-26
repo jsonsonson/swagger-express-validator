@@ -1,14 +1,14 @@
 {
-  "name": "swagger-express-validator",
-  "version": "0.0.9",
+  "name": "swagger-express-validator-formats",
+  "version": "0.0.1",
   "engines": {
     "node": ">=6.0.0"
   },
-  "description": "Validation middleware that validates request/response against provided swagger spec",
+  "description": "swagger-express-validator, but with more supported Swagger formats passed to AJV",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gargol/swagger-express-validator"
+    "url": "https://github.com/jsonsonson/swagger-express-validator.git"
   },
   "directories": {
     "test": "test"

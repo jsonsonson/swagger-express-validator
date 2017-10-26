@@ -96,10 +96,32 @@ const sendData = (res, data, encoding) => {
 const validateResponse = (req, res, next) => {
   const ajv = new Ajv({
     allErrors: true,
+    unknownFormats:   true,
     formats: {
       int32: valueValidator.isInt,
       int64: valueValidator.isInt,
       url: valueValidator.isURL,
+      byte: valueValidator.isBase64,
+      float: valueValidator.isFloat,
+      double: valueValidator.isFloat,
+      email: valueValidator.isEmail,
+      date: valueValidator.isDate,
+      'date-time': valueValidator.isDate,
+      uuid: valueValidator.isUUID,
+      ipv4: valueValidator.isIP,
+      ipv6: valueValidator.isIP,
+      numeric: valueValidator.isNumeric,
+      alphanumeric: valueValidator.isAlphanumeric,
+      lowercase: valueValidator.isLowercase,
+      uppercase: valueValidator.isUppercase,
+      macAddress: valueValidator.isMACAddress,
+      url: valueValidator.isURL,
+      hex: valueValidator.isHexadecimal,
+      hexadecimal: valueValidator.isHexadecimal,
+      md5: valueValidator.isMD5,
+      json: valueValidator.isJSON,
+      currency: valueValidator.isCurrency,
+      base64: valueValidator.isBase64,
     },
   });
 
