@@ -74,6 +74,10 @@ const resolveRequestModelSchema = (req) => {
     let requestSchemas = null;
     if (pathObj[method]) {
       requestSchemas = pathObj[method].parameters;
+
+      if (requestSchemas) {
+        requestSchemas = requestSchemas.filter(param => param.schema);
+      }
     }
     if (requestSchemas && requestSchemas.length > 0) {
       schema = requestSchemas[0].schema;
