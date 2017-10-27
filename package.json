@@ -1,5 +1,5 @@
 {
-  "name": "swagger-express-validator-formats",
+  "name": "@jsonsonson/swagger-express-validator",
   "version": "0.0.6",
   "engines": {
     "node": ">=6.0.0"
