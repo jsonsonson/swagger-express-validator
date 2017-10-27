@@ -1,6 +1,9 @@
 Swagger Express Validator
 =========================
 
+Forked off of https://github.com/gargol/swagger-express-validator  
+Supported version of this fork will now be @jsonsonson/swagger-express-validator
+
 [![Build Status](https://travis-ci.org/gargol/swagger-express-validator.svg?branch=master)](https://travis-ci.org/gargol/swagger-express-validator)
 
 `swagger-express-validator` is a lightweight middleware for request/response validation based on
